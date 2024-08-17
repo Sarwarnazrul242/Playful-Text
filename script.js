@@ -1,9 +1,10 @@
 window.addEventListener('load', function(){
     const canvas = document.getElementById('canvas1');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', {
+        willReadFrequently: true
+    });
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    console.log(ctx);
 
     class Particle {
         constructor (effect, x, y, color) {
@@ -17,20 +18,31 @@ window.addEventListener('load', function(){
             this.dx = 0;
             this.dy = 0;
             this.vx = 0;
-            this.dy = 0;
+            this.vy = 0;
             this.force = 0;
             this.angle = 0;
             this.distance = 0;
             this.friction = Math.random() * 0.6 + 0.15;
-            this.ease = Math.random() * 0.1 + 0.005;
+            this.ease = Math.random() * 0.1 + 0.01;
         }
         draw(){
             this.effect.context.fillStyle = this.color;
             this.effect.context.fillRect(this.x, this.y, this.size, this.size)
         }
         update(){
-            this.x += (this.originX - this.x) * this.ease;
-            this.y += (this.originY - this.y) * this.ease;
+            this.dx = this.effect.mouse.x - this.x;
+            this.dy = this.effect.mouse.y - this.y;
+            this.distance = this.dx * this.dx + this.dy * this.dy;
+            this.force = -this.effect.mouse.radius / this.distance;
+
+            if (this.distance < this.effect.mouse.radius){
+                this.angle = Math.atan2(this.dy, this.dx);
+                this.vx += this.force * Math.cos(this.angle);
+                this.vy += this.force * Math.sin(this.angle);
+            }
+
+            this.x += (this.vx *= this.friction) + (this.originX - this.x) * this.ease;
+            this.y += (this.vy *= this.friction) + (this.originY - this.y) * this.ease;
         }
     }
 
@@ -54,7 +66,7 @@ window.addEventListener('load', function(){
 
             //Particle effect
             this.particle = [];
-            this.gap = 3;
+            this.gap = 2;
             this.mouse = {
                 radius: 20000,
                 x: 0,
@@ -64,7 +76,6 @@ window.addEventListener('load', function(){
                 this.mouse.x = e.x;
                 this.mouse.y = e.y;
             });
-            console.log(this.mouse.x, this.mouse.y);
 
         }
         wrapText(text){
@@ -128,10 +139,18 @@ window.addEventListener('load', function(){
                 particle.draw();
             });
         }
+        resize (width, height) {
+            this.canvasWidth = width;
+            this.canvasHeight = height;
+            this.textX = this.canvasWidth /2;
+            this.textY = this.canvasHeight / 2;
+            this.maxTextWidth = this.canvasWidth * 0.8;
+          
+        }
     }
 
     const effect = new Effect(ctx, canvas.width, canvas.height);
-    effect.wrapText('Hello World how are you!');
+    effect.wrapText('Sarwar Nazrul');
     effect.render();
 
     function animate() {
@@ -140,4 +159,11 @@ window.addEventListener('load', function(){
         requestAnimationFrame(animate);
     }
     animate();
+
+    window.addEventListener('resize', function() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        effect.resize(canvas.width, canvas.height);
+        effect.wrapText('Sarwar Nazrul');
+    });
 }); 
